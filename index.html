@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Recipe Keeper</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #fff8ef;
+      --panel: #ffffff;
+      --panel-strong: #fff1de;
+      --text: #2f241c;
+      --muted: #75675c;
+      --primary: #e86f35;
+      --primary-dark: #bf5124;
+      --accent: #2d8f70;
+      --danger: #d64747;
+      --border: #ead8c4;
+      --shadow: 0 18px 50px rgba(82, 52, 27, 0.12);
+      --radius: 20px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(232,111,53,.22), transparent 28rem),
+        linear-gradient(135deg, #fff8ef 0%, #fffdf9 52%, #f4fff9 100%);
+      color: var(--text);
+    }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; border: 0; }
+    .app { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 44px; }
+    header.hero {
+      display: grid; grid-template-columns: 1.2fr .8fr; gap: 20px; align-items: stretch; margin-bottom: 22px;
+    }
+    .hero-card, .panel {
+      background: rgba(255,255,255,.88); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+    }
+    .hero-card { padding: 28px; overflow: hidden; position: relative; }
+    .hero-card::after { content: "🍲"; position: absolute; right: 20px; bottom: -22px; font-size: 8rem; opacity: .12; }
+    h1 { margin: 0 0 8px; font-size: clamp(2rem, 5vw, 4.5rem); letter-spacing: -.06em; }
+    .lead { margin: 0; color: var(--muted); font-size: 1.05rem; line-height: 1.7; max-width: 620px; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 18px; }
+    .stat { background: var(--panel-strong); border-radius: 16px; padding: 16px; }
+    .stat b { display: block; font-size: 2rem; color: var(--primary-dark); }
+    .stat span { color: var(--muted); font-size: .9rem; }
+    .toolbar { display: grid; grid-template-columns: 1.2fr .8fr .8fr; gap: 12px; margin-bottom: 18px; }
+    .field { display: flex; flex-direction: column; gap: 7px; }
+    label { font-weight: 700; font-size: .9rem; }
+    input, textarea, select {
+      width: 100%; border: 1px solid var(--border); border-radius: 14px; background: #fff; color: var(--text); padding: 12px 13px; outline: none;
+    }
+    textarea { resize: vertical; min-height: 96px; }
+    input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(232,111,53,.14); }
+    .layout { display: grid; grid-template-columns: 410px 1fr; gap: 18px; align-items: start; }
+    .panel { padding: 18px; }
+    .panel h2 { margin: 0 0 14px; font-size: 1.3rem; }
+    .form-grid { display: grid; gap: 13px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+    .btn { border-radius: 999px; padding: 11px 16px; color: #fff; background: var(--primary); font-weight: 800; box-shadow: 0 8px 20px rgba(232,111,53,.2); }
+    .btn:hover { background: var(--primary-dark); }
+    .btn.secondary { background: #f3e2cf; color: var(--text); box-shadow: none; }
+    .btn.accent { background: var(--accent); }
+    .btn.danger { background: var(--danger); }
+    .btn.small { padding: 8px 12px; font-size: .9rem; }
+    .backup { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .recipes { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .recipe-card { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 12px; display: grid; grid-template-columns: 80px 1fr; gap: 12px; align-items: start; }
+    .thumb { width: 80px; height: 80px; border-radius: 16px; background: var(--panel-strong); display: grid; place-items: center; overflow: hidden; flex: 0 0 auto; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb-fallback { font-size: 2rem; }
+    .recipe-body { min-width: 0; display: grid; gap: 7px; }
+    .recipe-head { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
+    .recipe-title { min-width: 0; }
+    .recipe-card h3 { margin: 0; font-size: 1.08rem; line-height: 1.25; overflow-wrap: anywhere; }
+    .summary { margin: 4px 0 0; color: var(--muted); font-size: .9rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; color: var(--muted); font-size: .82rem; }
+    .pill { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 5px 9px; background: var(--panel-strong); color: var(--primary-dark); font-weight: 700; }
+    .tag { background: #eefaf5; color: #20765b; }
+    .detail-image { width: 100%; max-height: 280px; object-fit: cover; border-radius: 16px; margin: 8px 0 10px; }
+    .card-text { white-space: pre-wrap; color: var(--muted); line-height: 1.45; margin: 0; font-size: .92rem; }
+    details.compact-details summary { color: var(--primary-dark); font-weight: 800; cursor: pointer; list-style-position: inside; }
+    .empty { text-align: center; padding: 44px 16px; color: var(--muted); background: rgba(255,255,255,.7); border: 1px dashed var(--border); border-radius: 18px; }
+    .notice { margin-top: 10px; color: var(--muted); font-size: .9rem; min-height: 1.3em; }
+    .hidden-file { display: none; }
+
+    @media (max-width: 900px) {
+      header.hero, .layout, .toolbar { grid-template-columns: 1fr; }
+      .recipe-card { grid-template-columns: 80px 1fr; }
+      .thumb { width: 80px; height: 80px; }
+    }
+    @media (max-width: 560px) {
+      .app { width: min(100% - 20px, 1180px); padding-top: 14px; }
+      .hero-card, .panel { border-radius: 16px; padding: 14px; }
+      .stats, .row, .backup { grid-template-columns: 1fr; }
+      .recipe-card { grid-template-columns: 80px 1fr; gap: 10px; padding: 10px; }
+      .thumb { width: 80px; height: 80px; border-radius: 14px; }
+      .recipe-head { display: grid; gap: 8px; }
+      .actions .btn { flex: 1 1 auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <section class="hero-card">
+        <h1>Recipe Keeper</h1>
+        <p class="lead">お気に入りレシピ、タグ、カテゴリ、冷蔵庫の材料をまとめて管理。データはブラウザ内に保存され、JSONでバックアップできます。</p>
+      </section>
+      <section class="stats hero-card" aria-label="保存状況">
+        <div class="stat"><b id="recipeCount">0</b><span>レシピ</span></div>
+        <div class="stat"><b id="categoryCount">0</b><span>カテゴリ</span></div>
+        <div class="stat"><b id="tagCount">0</b><span>タグ</span></div>
+      </section>
+    </header>
+
+    <section class="toolbar panel" aria-label="検索と絞り込み">
+      <div class="field"><label for="searchInput">レシピ検索</label><input id="searchInput" type="search" placeholder="料理名・材料・タグ・メモで検索" /></div>
+      <div class="field"><label for="categoryFilter">カテゴリ分類</label><select id="categoryFilter"><option value="">すべて</option></select></div>
+      <div class="field"><label for="fridgeInput">冷蔵庫の材料から検索</label><input id="fridgeInput" placeholder="例: 卵, トマト, チーズ" /></div>
+    </section>
+
+    <div class="layout">
+      <section class="panel">
+        <h2 id="formTitle">レシピを追加</h2>
+        <form id="recipeForm" class="form-grid">
+          <input id="recipeId" type="hidden" />
+          <div class="field"><label for="title">レシピ名</label><input id="title" required placeholder="例: ふわふわオムレツ" /></div>
+          <div class="row">
+            <div class="field"><label for="category">カテゴリ</label><input id="category" placeholder="朝食 / 和食 / 作り置き" /></div>
+            <div class="field"><label for="tags">タグ管理</label><input id="tags" placeholder="時短, 子ども向け, 節約" /></div>
+          </div>
+          <div class="field"><label for="imageUrl">画像URL</label><input id="imageUrl" type="url" placeholder="https://example.com/recipe.jpg" /></div>
+          <div class="field"><label for="ingredients">材料</label><textarea id="ingredients" required placeholder="卵 2個&#10;牛乳 大さじ1"></textarea></div>
+          <div class="field"><label for="steps">作り方</label><textarea id="steps" required placeholder="1. 材料を混ぜる&#10;2. 弱火で焼く"></textarea></div>
+          <div class="field"><label for="memo">メモ</label><textarea id="memo" placeholder="保存方法やアレンジなど"></textarea></div>
+          <div class="actions">
+            <button class="btn" type="submit">保存</button>
+            <button class="btn secondary" id="resetButton" type="button">入力をクリア</button>
+          </div>
+        </form>
+        <div class="backup">
+          <button class="btn accent" id="exportButton" type="button">JSONバックアップ</button>
+          <button class="btn secondary" id="importButton" type="button">JSON復元</button>
+          <input class="hidden-file" id="importFile" type="file" accept="application/json,.json" />
+        </div>
+        <p class="notice" id="notice" role="status"></p>
+      </section>
+
+      <section class="panel">
+        <h2>保存したレシピ</h2>
+        <div id="recipeList" class="recipes"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'recipe-keeper-recipes-v1';
+    const sampleRecipes = [
+      { id: crypto.randomUUID(), title: 'トマトチーズオムレツ', category: '朝食', tags: ['時短', '卵'], ingredients: '卵 2個\nトマト 1個\nチーズ 30g', steps: '1. 卵を溶いて塩こしょうする\n2. トマトとチーズを入れて焼く', memo: '冷蔵庫の余り野菜でもOK', updatedAt: new Date().toISOString() }
+    ];
+    let recipes = loadRecipes();
+
+    const el = (id) => document.getElementById(id);
+    const fields = ['recipeId', 'title', 'category', 'tags', 'imageUrl', 'ingredients', 'steps', 'memo'];
+
+    function loadRecipes() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || sampleRecipes; }
+      catch { return sampleRecipes; }
+    }
+    function saveRecipes() { localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes)); }
+    function splitList(value) { return value.split(/[,、\n]/).map((v) => v.trim()).filter(Boolean); }
+    function normalize(value) { return value.toLowerCase().trim(); }
+    function showNotice(message) { el('notice').textContent = message; setTimeout(() => { el('notice').textContent = ''; }, 3000); }
+
+    function recipeMatchesFridge(recipe) {
+      const fridge = splitList(el('fridgeInput').value).map(normalize);
+      if (!fridge.length) return true;
+      const ingredients = normalize(recipe.ingredients);
+      return fridge.some((item) => ingredients.includes(item));
+    }
+
+    function recipeSearchText(recipe) {
+      return normalize([
+        recipe.title,
+        recipe.ingredients,
+        recipe.tags.join(' '),
+        recipe.memo
+      ].join(' '));
+    }
+
+    function filteredRecipes() {
+      const query = normalize(el('searchInput').value);
+      const category = el('categoryFilter').value;
+      return recipes.filter((recipe) => {
+        return (!query || recipeSearchText(recipe).includes(query)) && (!category || recipe.category === category) && recipeMatchesFridge(recipe);
+      }).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    }
+
+    function render() {
+      const categories = [...new Set(recipes.map((r) => r.category).filter(Boolean))].sort();
+      const tags = [...new Set(recipes.flatMap((r) => r.tags))].sort();
+      el('recipeCount').textContent = recipes.length;
+      el('categoryCount').textContent = categories.length;
+      el('tagCount').textContent = tags.length;
+      const selected = el('categoryFilter').value;
+      el('categoryFilter').innerHTML = '<option value="">すべて</option>' + categories.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      el('categoryFilter').value = categories.includes(selected) ? selected : '';
+
+      const list = filteredRecipes();
+      el('recipeList').innerHTML = list.length ? list.map(recipeCard).join('') : '<div class="empty">条件に合うレシピがありません。新しいレシピを保存してみましょう。</div>';
+    }
+
+    function recipeCard(recipe) {
+      const summary = recipe.memo || recipe.ingredients.split('\n')[0] || 'メモはまだありません';
+      return `<article class="recipe-card">
+        ${thumbnailMarkup(recipe)}
+        <div class="recipe-body">
+          <div class="recipe-head">
+            <div class="recipe-title"><h3>${escapeHtml(recipe.title)}</h3><p class="summary">${escapeHtml(summary)}</p></div>
+            <div class="actions"><button class="btn small secondary" onclick="editRecipe('${recipe.id}')">編集</button><button class="btn small danger" onclick="deleteRecipe('${recipe.id}')">削除</button></div>
+          </div>
+          <div class="meta"><span class="pill">${escapeHtml(recipe.category || '未分類')}</span>${recipe.tags.map((tag) => `<span class="pill tag">#${escapeHtml(tag)}</span>`).join('')}</div>
+          <details class="compact-details"><summary>詳細を見る</summary>
+            ${detailImageMarkup(recipe)}
+            <p class="card-text"><strong>材料</strong>\n${escapeHtml(recipe.ingredients)}</p>
+            <p class="card-text"><strong>作り方</strong>\n${escapeHtml(recipe.steps)}</p>
+            ${recipe.memo ? `<p class="card-text"><strong>メモ</strong>\n${escapeHtml(recipe.memo)}</p>` : ''}
+          </details>
+        </div>
+      </article>`;
+    }
+
+    function detailImageMarkup(recipe) {
+      if (!recipe.imageUrl) return '';
+      return `<img class="detail-image" src="${escapeHtml(recipe.imageUrl)}" alt="${escapeHtml(recipe.title)}の詳細画像" loading="lazy">`;
+    }
+
+    function thumbnailMarkup(recipe) {
+      if (recipe.imageUrl) {
+        return `<div class="thumb"><img src="${escapeHtml(recipe.imageUrl)}" alt="${escapeHtml(recipe.title)}の画像" loading="lazy" onerror="this.replaceWith(fallbackThumb('${categoryEmoji(recipe.category)}'))"></div>`;
+      }
+      return `<div class="thumb"><span class="thumb-fallback" aria-hidden="true">${categoryEmoji(recipe.category)}</span></div>`;
+    }
+
+    function categoryEmoji(category = '') {
+      const value = category.toLowerCase();
+      if (value.includes('朝') || value.includes('breakfast')) return '🍳';
+      if (value.includes('和') || value.includes('ご飯') || value.includes('rice')) return '🍚';
+      if (value.includes('麺') || value.includes('noodle') || value.includes('pasta')) return '🍜';
+      if (value.includes('肉') || value.includes('meat')) return '🍖';
+      if (value.includes('魚') || value.includes('fish')) return '🐟';
+      if (value.includes('デザート') || value.includes('dessert')) return '🍰';
+      if (value.includes('サラダ') || value.includes('salad')) return '🥗';
+      return '🍽️';
+    }
+
+    function fallbackThumb(emoji) {
+      const span = document.createElement('span');
+      span.className = 'thumb-fallback';
+      span.setAttribute('aria-hidden', 'true');
+      span.textContent = emoji;
+      return span;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+    }
+
+    el('recipeForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const id = el('recipeId').value || crypto.randomUUID();
+      const recipe = { id, title: el('title').value.trim(), category: el('category').value.trim(), tags: splitList(el('tags').value), imageUrl: el('imageUrl').value.trim(), ingredients: el('ingredients').value.trim(), steps: el('steps').value.trim(), memo: el('memo').value.trim(), updatedAt: new Date().toISOString() };
+      recipes = recipes.some((r) => r.id === id) ? recipes.map((r) => r.id === id ? recipe : r) : [...recipes, recipe];
+      saveRecipes(); resetForm(); render(); showNotice('レシピを保存しました。');
+    });
+
+    window.editRecipe = (id) => {
+      const recipe = recipes.find((r) => r.id === id);
+      if (!recipe) return;
+      el('recipeId').value = recipe.id; el('title').value = recipe.title; el('category').value = recipe.category; el('tags').value = recipe.tags.join(', '); el('imageUrl').value = recipe.imageUrl || ''; el('ingredients').value = recipe.ingredients; el('steps').value = recipe.steps; el('memo').value = recipe.memo || '';
+      el('formTitle').textContent = 'レシピを編集'; window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    window.deleteRecipe = (id) => {
+      if (!confirm('このレシピを削除しますか？')) return;
+      recipes = recipes.filter((r) => r.id !== id); saveRecipes(); render(); showNotice('レシピを削除しました。');
+    };
+    function resetForm() { el('recipeForm').reset(); el('recipeId').value = ''; el('formTitle').textContent = 'レシピを追加'; }
+    el('resetButton').addEventListener('click', resetForm);
+    ['searchInput', 'categoryFilter', 'fridgeInput'].forEach((id) => el(id).addEventListener('input', render));
+    el('exportButton').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), recipes }, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'recipe-keeper-backup.json'; a.click(); URL.revokeObjectURL(url);
+    });
+    el('importButton').addEventListener('click', () => el('importFile').click());
+    el('importFile').addEventListener('change', async (event) => {
+      const file = event.target.files[0]; if (!file) return;
+      try {
+        const data = JSON.parse(await file.text()); const imported = Array.isArray(data) ? data : data.recipes;
+        if (!Array.isArray(imported)) throw new Error('invalid');
+        recipes = imported.map((r) => ({ ...r, id: r.id || crypto.randomUUID(), imageUrl: r.imageUrl || '', tags: Array.isArray(r.tags) ? r.tags : splitList(String(r.tags || '')), updatedAt: r.updatedAt || new Date().toISOString() }));
+        saveRecipes(); render(); showNotice('JSONから復元しました。');
+      } catch { showNotice('復元できませんでした。JSON形式を確認してください。'); }
+      event.target.value = '';
+    });
+    render();
+  </script>
+</body>
+</html>
