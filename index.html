@@ -1,1 +1,543 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>レシピキーパー</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f8fafc;
+      color: #111827;
+    }
+    header {
+      background: #f97316;
+      color: white;
+      padding: 18px 16px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    header p {
+      margin: 6px 0 0;
+      font-size: 14px;
+    }
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      border: none;
+      background: #e5e7eb;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    .tab-btn.active {
+      background: #f97316;
+      color: white;
+    }
+    section {
+      display: none;
+    }
+    section.active {
+      display: block;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      margin: 12px 0 6px;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 16px;
+      background: white;
+    }
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    .primary { background: #f97316; color: white; }
+    .secondary { background: #e5e7eb; color: #111827; }
+    .danger { background: #fee2e2; color: #991b1b; }
+    .green { background: #dcfce7; color: #166534; }
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .recipe-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .tag {
+      display: inline-block;
+      background: #ffedd5;
+      color: #9a3412;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 12px;
+      margin: 2px;
+    }
+    .small {
+      font-size: 13px;
+      color: #6b7280;
+    }
+    .match {
+      border-left: 5px solid #22c55e;
+    }
+    .almost {
+      border-left: 5px solid #facc15;
+    }
+    .lack {
+      border-left: 5px solid #ef4444;
+    }
+    a {
+      color: #2563eb;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>レシピキーパー</h1>
+  <p>SNSで見たレシピを保存して、料理名・材料・タグで探せるアプリ</p>
+</header>
 
+<main>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="openTab('search')">検索</button>
+    <button class="tab-btn" onclick="openTab('save')">保存</button>
+    <button class="tab-btn" onclick="openTab('fridge')">冷蔵庫</button>
+    <button class="tab-btn" onclick="openTab('backup')">バックアップ</button>
+  </div>
+
+  <section id="search" class="active">
+    <div class="card">
+      <h2>保存レシピ検索</h2>
+      <input id="searchInput" placeholder="例：チャーハン 卵 ねぎ 小麦粉" oninput="renderRecipes()" />
+      <p class="small">料理名・材料・作り方・タグ・メモから検索します。</p>
+    </div>
+    <div id="recipeList"></div>
+  </section>
+
+  <section id="save">
+    <div class="card">
+      <h2 id="formTitle">レシピを保存</h2>
+
+      <input type="hidden" id="editingId" />
+
+      <label>料理名</label>
+      <input id="recipeName" placeholder="例：チョコクッキー" />
+
+      <label>SNS URL</label>
+      <input id="recipeUrl" placeholder="Instagram / TikTok / YouTube / X のURL" />
+
+      <label>カテゴリ</label>
+      <select id="recipeCategory">
+        <option value="未分類">未分類</option>
+        <option value="主食">主食</option>
+        <option value="主菜">主菜</option>
+        <option value="副菜">副菜</option>
+        <option value="汁物">汁物</option>
+        <option value="お弁当">お弁当</option>
+        <option value="おやつ">おやつ</option>
+        <option value="飲み物">飲み物</option>
+      </select>
+
+      <label>材料</label>
+      <textarea id="recipeIngredients" placeholder="例：
+小麦粉
+卵
+チョコ
+砂糖"></textarea>
+
+      <label>作り方</label>
+      <textarea id="recipeSteps" placeholder="作り方をメモ"></textarea>
+
+      <label>タグ</label>
+      <input id="recipeTags" placeholder="例：時短, 子供向け, お弁当" />
+
+      <label>メモ</label>
+      <textarea id="recipeMemo" placeholder="家族の反応、作った感想など"></textarea>
+
+      <div class="row">
+        <button class="primary" onclick="saveRecipe()">保存する</button>
+        <button class="secondary" onclick="resetForm()">クリア</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="fridge">
+    <div class="card">
+      <h2>冷蔵庫から探す</h2>
+      <textarea id="fridgeInput" placeholder="例：
+卵
+ねぎ
+ご飯
+ハム"></textarea>
+      <div class="row">
+        <button class="primary" onclick="renderFridgeMatches()">作れるレシピを探す</button>
+      </div>
+    </div>
+    <div id="fridgeResults"></div>
+  </section>
+
+  <section id="backup">
+    <div class="card">
+      <h2>バックアップ</h2>
+      <p class="small">保存データはこの端末のブラウザ内に保存されます。端末変更やキャッシュ削除で消える可能性があります。</p>
+      <div class="row">
+        <button class="green" onclick="exportData()">エクスポート</button>
+        <button class="secondary" onclick="document.getElementById('importFile').click()">インポート</button>
+        <input id="importFile" type="file" accept="application/json" style="display:none" onchange="importData(event)" />
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const STORAGE_KEY = "recipe_keeper_v1";
+
+function getRecipes() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+}
+
+function setRecipes(recipes) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
+}
+
+function createId() {
+  return "recipe_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+}
+
+function normalizeText(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/[、，]/g, ",")
+    .replace(/\s+/g, "")
+    .trim();
+}
+
+function normalizeIngredient(name) {
+  const raw = normalizeText(name);
+
+  const map = {
+    "たまご": "卵",
+    "玉子": "卵",
+    "卵": "卵",
+    "ネギ": "ねぎ",
+    "長ねぎ": "ねぎ",
+    "長ネギ": "ねぎ",
+    "じゃがいも": "じゃがいも",
+    "ジャガイモ": "じゃがいも",
+    "馬鈴薯": "じゃがいも",
+    "にんじん": "にんじん",
+    "人参": "にんじん",
+    "ニンジン": "にんじん",
+    "豚こま": "豚肉",
+    "豚バラ": "豚肉",
+    "豚肉": "豚肉",
+    "鶏もも": "鶏肉",
+    "鶏むね": "鶏肉",
+    "ささみ": "鶏肉",
+    "鶏肉": "鶏肉"
+  };
+
+  return map[name] || map[raw] || raw;
+}
+
+function splitItems(text) {
+  return String(text || "")
+    .split(/[\n,、，]+/)
+    .map(v => v.trim())
+    .filter(Boolean);
+}
+
+function normalizedIngredients(text) {
+  return [...new Set(splitItems(text).map(normalizeIngredient))];
+}
+
+function openTab(tabId) {
+  document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+  document.getElementById(tabId).classList.add("active");
+  event.target.classList.add("active");
+  if (tabId === "search") renderRecipes();
+}
+
+function saveRecipe() {
+  const id = document.getElementById("editingId").value;
+  const name = document.getElementById("recipeName").value.trim();
+
+  if (!name) {
+    alert("料理名を入力してください");
+    return;
+  }
+
+  const recipes = getRecipes();
+  const now = new Date().toISOString();
+
+  const recipe = {
+    id: id || createId(),
+    name,
+    url: document.getElementById("recipeUrl").value.trim(),
+    category: document.getElementById("recipeCategory").value,
+    ingredients: document.getElementById("recipeIngredients").value.trim(),
+    ingredientKeys: normalizedIngredients(document.getElementById("recipeIngredients").value),
+    steps: document.getElementById("recipeSteps").value.trim(),
+    tags: splitItems(document.getElementById("recipeTags").value),
+    memo: document.getElementById("recipeMemo").value.trim(),
+    createdAt: id ? (recipes.find(r => r.id === id)?.createdAt || now) : now,
+    updatedAt: now
+  };
+
+  const nextRecipes = id
+    ? recipes.map(r => r.id === id ? recipe : r)
+    : [recipe, ...recipes];
+
+  setRecipes(nextRecipes);
+  resetForm();
+  renderRecipes();
+  openTabById("search");
+  alert("保存しました");
+}
+
+function resetForm() {
+  document.getElementById("editingId").value = "";
+  document.getElementById("formTitle").textContent = "レシピを保存";
+  document.getElementById("recipeName").value = "";
+  document.getElementById("recipeUrl").value = "";
+  document.getElementById("recipeCategory").value = "未分類";
+  document.getElementById("recipeIngredients").value = "";
+  document.getElementById("recipeSteps").value = "";
+  document.getElementById("recipeTags").value = "";
+  document.getElementById("recipeMemo").value = "";
+}
+
+function openTabById(tabId) {
+  document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+  document.getElementById(tabId).classList.add("active");
+  const btns = document.querySelectorAll(".tab-btn");
+  const order = { search: 0, save: 1, fridge: 2, backup: 3 };
+  btns[order[tabId]].classList.add("active");
+}
+
+function editRecipe(id) {
+  const recipe = getRecipes().find(r => r.id === id);
+  if (!recipe) return;
+
+  document.getElementById("editingId").value = recipe.id;
+  document.getElementById("formTitle").textContent = "レシピを編集";
+  document.getElementById("recipeName").value = recipe.name || "";
+  document.getElementById("recipeUrl").value = recipe.url || "";
+  document.getElementById("recipeCategory").value = recipe.category || "未分類";
+  document.getElementById("recipeIngredients").value = recipe.ingredients || "";
+  document.getElementById("recipeSteps").value = recipe.steps || "";
+  document.getElementById("recipeTags").value = (recipe.tags || []).join(", ");
+  document.getElementById("recipeMemo").value = recipe.memo || "";
+
+  openTabById("save");
+}
+
+function deleteRecipe(id) {
+  if (!confirm("このレシピを削除しますか？")) return;
+  const recipes = getRecipes().filter(r => r.id !== id);
+  setRecipes(recipes);
+  renderRecipes();
+}
+
+function recipeMatches(recipe, keywords) {
+  const haystack = [
+    recipe.name,
+    recipe.category,
+    recipe.ingredients,
+    recipe.steps,
+    (recipe.tags || []).join(" "),
+    recipe.memo
+  ].join(" ").toLowerCase();
+
+  return keywords.every(word => haystack.includes(word.toLowerCase()));
+}
+
+function renderRecipes() {
+  const box = document.getElementById("recipeList");
+  const recipes = getRecipes();
+  const query = document.getElementById("searchInput").value.trim();
+  const keywords = query.split(/\s+/).filter(Boolean);
+
+  const filtered = keywords.length
+    ? recipes.filter(recipe => recipeMatches(recipe, keywords))
+    : recipes;
+
+  if (!filtered.length) {
+    box.innerHTML = `<div class="card"><p>該当するレシピがありません。</p></div>`;
+    return;
+  }
+
+  box.innerHTML = `
+    <p class="small">検索結果：${filtered.length}件</p>
+    ${filtered.map(renderRecipeCard).join("")}
+  `;
+}
+
+function renderRecipeCard(recipe) {
+  const tags = (recipe.tags || []).map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("");
+  const url = recipe.url ? `<p><a href="${escapeHtml(recipe.url)}" target="_blank">SNSレシピを開く</a></p>` : "";
+
+  return `
+    <div class="card">
+      <div class="recipe-title">${escapeHtml(recipe.name)}</div>
+      <p><span class="tag">${escapeHtml(recipe.category || "未分類")}</span>${tags}</p>
+      ${url}
+      <p><strong>材料：</strong><br>${escapeHtml(recipe.ingredients || "未入力").replace(/\n/g, "<br>")}</p>
+      <p><strong>作り方：</strong><br>${escapeHtml(recipe.steps || "未入力").replace(/\n/g, "<br>")}</p>
+      ${recipe.memo ? `<p><strong>メモ：</strong><br>${escapeHtml(recipe.memo).replace(/\n/g, "<br>")}</p>` : ""}
+      <p class="small">更新：${new Date(recipe.updatedAt || recipe.createdAt).toLocaleString("ja-JP")}</p>
+      <div class="row">
+        <button class="secondary" onclick="editRecipe('${recipe.id}')">編集</button>
+        <button class="danger" onclick="deleteRecipe('${recipe.id}')">削除</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderFridgeMatches() {
+  const box = document.getElementById("fridgeResults");
+  const fridgeItems = normalizedIngredients(document.getElementById("fridgeInput").value);
+
+  if (!fridgeItems.length) {
+    box.innerHTML = `<div class="card"><p>冷蔵庫の食材を入力してください。</p></div>`;
+    return;
+  }
+
+  const recipes = getRecipes().map(recipe => {
+    const required = recipe.ingredientKeys && recipe.ingredientKeys.length
+      ? recipe.ingredientKeys
+      : normalizedIngredients(recipe.ingredients);
+
+    const matched = required.filter(item => fridgeItems.includes(item));
+    const missing = required.filter(item => !fridgeItems.includes(item));
+
+    return {
+      ...recipe,
+      matched,
+      missing,
+      requiredCount: required.length
+    };
+  });
+
+  const sorted = recipes.sort((a, b) => {
+    if (a.missing.length !== b.missing.length) return a.missing.length - b.missing.length;
+    return b.matched.length - a.matched.length;
+  });
+
+  const canMake = sorted.filter(r => r.requiredCount && r.missing.length === 0);
+  const almost = sorted.filter(r => r.missing.length > 0 && r.missing.length <= 2);
+  const lack = sorted.filter(r => r.missing.length > 2 || !r.requiredCount);
+
+  box.innerHTML = `
+    ${renderMatchGroup("今ある材料で作れる", canMake, "match")}
+    ${renderMatchGroup("あと1〜2品で作れる", almost, "almost")}
+    ${renderMatchGroup("材料不足が多い", lack, "lack")}
+  `;
+}
+
+function renderMatchGroup(title, list, className) {
+  if (!list.length) {
+    return `<div class="card"><h3>${title}</h3><p class="small">該当なし</p></div>`;
+  }
+
+  return `
+    <div class="card">
+      <h3>${title}</h3>
+      ${list.map(recipe => `
+        <div class="card ${className}">
+          <div class="recipe-title">${escapeHtml(recipe.name)}</div>
+          <p><strong>一致：</strong>${recipe.matched.length ? recipe.matched.map(escapeHtml).join("、") : "なし"}</p>
+          <p><strong>不足：</strong>${recipe.missing.length ? recipe.missing.map(escapeHtml).join("、") : "なし"}</p>
+          <div class="row">
+            <button class="secondary" onclick="editRecipe('${recipe.id}')">編集</button>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function exportData() {
+  const data = JSON.stringify(getRecipes(), null, 2);
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "recipe-keeper-backup.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data)) throw new Error("invalid");
+      if (!confirm("現在の保存データを上書きしますか？")) return;
+      setRecipes(data);
+      renderRecipes();
+      alert("インポートしました");
+    } catch {
+      alert("読み込みに失敗しました");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function escapeHtml(text) {
+  return String(text || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+renderRecipes();
+</script>
+</body>
+</html>
